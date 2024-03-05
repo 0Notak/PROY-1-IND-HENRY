@@ -9,8 +9,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 app=FastAPI(debug=True)
 
-DataSet_Final_A = pd.read_parquet('DataSet_Final2.parquet', engine='pyarrow')
-DataSet_Final =pd.DataFrame(DataSet_Final_A)
+DataSet_Final1 = pd.read_parquet('df1.parquet', engine='pyarrow')
+DataSet_Final2 = pd.read_parquet('df2.parquet', engine='pyarrow')
+DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
+DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
+DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
+
 
 @app.get('/')
 def message():
@@ -19,7 +23,7 @@ def message():
 
 @app.get('/developer/') 
 async def developer(desarrollador: str):
-    Dev = DataSet_Final[DataSet_Final['developer'] == 'Valve']
+    Dev = DataSet_Final1[DataSet_Final1['developer'] == desarrollador]
     items = Dev[['anio', 'items_count']].groupby('anio').sum()
     countitems = Dev[['anio', 'items_count']].groupby('anio').count()
     ceros = Dev[Dev['price'] == 0]
@@ -33,7 +37,7 @@ async def developer(desarrollador: str):
 
 @app.get('/user_data/')
 async def userdata( User_id : str ):
-    df_filtrado = DataSet_Final.loc[DataSet_Final["user_id"]== User_id]
+    df_filtrado = DataSet_Final2.loc[DataSet_Final2["user_id"]== User_id]
     total_items= df_filtrado['item_id'].nunique()
     porcentaje_recomendacion= (df_filtrado['recommend'].sum() / total_items) * 100
     cantidad_dinero= df_filtrado['price'].sum()
@@ -41,7 +45,7 @@ async def userdata( User_id : str ):
 
 @app.get('/UserForGenre/')
 async def UserForGenre(genero: str) -> dict:
-    fg= DataSet_Final[DataSet_Final['genres'] == genero]
+    fg= DataSet_Final3[DataSet_Final3['genres'] == genero]
     fg2 = fg[['user_id', 'playtime_forever']].groupby(fg['user_id']).sum()
     r1 = fg2['playtime_forever'].idxmax()
     cA= fg[fg['user_id'] == r1]
@@ -52,7 +56,7 @@ async def UserForGenre(genero: str) -> dict:
 @app.get('/best_developer_year/')
 async def best_developer_year(año: int):
     # Filtrar el dataset por el año especificado
-    year_data = DataSet_Final[DataSet_Final['anio'] == año]
+    year_data = DataSet_Final4[DataSet_Final4['anio'] == año]
 
     # Contar la cantidad de juegos recomendados por desarrollador para el año dado
     developer_recommendations = year_data['developer'].value_counts()
@@ -68,12 +72,10 @@ async def best_developer_year(año: int):
 
 @app.get('/develorper_reviews_analysis/')
 async def developer_reviews_analysis(desarrolladora: str) -> dict:
-    Dev = DataSet_Final[DataSet_Final['developer'] == desarrolladora]['Sentimiento']
+    Dev = DataSet_Final5[DataSet_Final5['developer'] == desarrolladora]['Sentimiento']
     r1 = (Dev == 2).sum()
     r2 = (Dev == 1).sum()
     r3 = (Dev == 0).sum()
     r = r1 + r2
     return {f'Desarrollador ':desarrolladora, 'Positivo ':r.tolist(), 'Negativo':r3.tolist()}
-
-
 

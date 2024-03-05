@@ -74,12 +74,11 @@ async def developer_reviews_analysis(desarrolladora: str) -> dict:
     r = r1 + r2
     return {f'Desarrollador ':desarrolladora, 'Positivo ':r.tolist(), 'Negativo':r3.tolist()}
 
-muestra = DataSet_Final.head(4000)
-tfidf = TfidfVectorizer(stop_words='english')
-muestra=muestra.fillna("")
-
-tdfid_matrix = tfidf.fit_transform(muestra['reviews'])
-cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
+# Inicializar el vectorizador TF-IDF
+vectorizer = TfidfVectorizer(stop_words='english')
+ml = DataSet_Final.head(4000)
+# Vectorizar la descripción de los juegos
+tfidf_matrix = vectorizer.fit_transform(ml['review'])
 
 def recomendacion(id_producto: int):
     if id_producto not in muestra['steam_id'].values:

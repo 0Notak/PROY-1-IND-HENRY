@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import uvicorn
 import pyarrow
 import pandas as pd
 import numpy as np
@@ -74,13 +75,16 @@ async def developer_reviews_analysis(desarrolladora: str) -> dict:
     r = r1 + r2
     return {f'Desarrollador ':desarrolladora, 'Positivo ':r.tolist(), 'Negativo':r3.tolist()}
 
-# Inicializar el vectorizador TF-IDF
-vectorizer = TfidfVectorizer(stop_words='english')
-ml = DataSet_Final.head(4000)
-# Vectorizar la descripción de los juegos
-tfidf_matrix = vectorizer.fit_transform(ml['review'])
+
 
 def recomendacion(id_producto: int):
+    # Inicializar el vectorizador TF-IDF
+    vectorizer = TfidfVectorizer(stop_words='english')
+    ml = DataSet_Final.head(4000)
+# Vectorizar la descripción de los juegos
+    tfidf_matrix = vectorizer.fit_transform(ml['review'])
+
+
     if id_producto not in muestra['steam_id'].values:
         return {'mensaje': 'No existe el id del juego.'}
     
@@ -102,14 +106,5 @@ def recomendacion(id_producto: int):
     
     return print({'juegos recomendados': list(sim_juegos)})
 
-def recomendacion_juego(id_juego: int):
-    if id_juego not in muestra['id'].values:
-        return {'mensaje': 'No existe el id del juego.'}
-    titulo = muestra.loc[muestra['id'] == id_juego, 'title'].iloc[0]
-    idx = muestra[muestra['title'] == titulo].index[0]
-    sim_cosine = list(enumerate(cosine_similarity[idx]))
-    sim_scores = sorted(sim_cosine, key=lambda x: x[1], reverse=True)
-    sim_ind = [i for i, _ in sim_scores[1:6]]
-    sim_juegos = muestra['title'].iloc[sim_ind].values.tolist()
-    return {'juegos recomendados': list(sim_juegos)}
+
 

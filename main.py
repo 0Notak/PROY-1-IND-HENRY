@@ -77,34 +77,3 @@ async def developer_reviews_analysis(desarrolladora: str) -> dict:
 
 
 
-def recomendacion(id_producto: int):
-    # Inicializar el vectorizador TF-IDF
-    vectorizer = TfidfVectorizer(stop_words='english')
-    ml = DataSet_Final.head(4000)
-# Vectorizar la descripción de los juegos
-    tfidf_matrix = vectorizer.fit_transform(ml['review'])
-
-
-    if id_producto not in muestra['steam_id'].values:
-        return {'mensaje': 'No existe el id del juego.'}
-    
-    # Obtener géneros del juego con el id_producto
-    generos = muestra.columns[2:17]  # Obtener los nombres de las columnas de género
-    
-    # Filtrar el dataframe para incluir juegos con géneros coincidentes pero con títulos diferentes
-    filtered_df = muestra[(muestra[generos] == 1).any(axis=1) & (muestra['steam_id'] != id_producto)]
-    
-    # Calcular similitud del coseno
-    tdfid_matrix_filtered = tfidf.transform(filtered_df['reviews'])
-    cosine_similarity_filtered = linear_kernel(tdfid_matrix_filtered, tdfid_matrix_filtered)
-    
-    idx = muestra[muestra['steam_id'] == id_producto].index[0]
-    sim_cosine = list(enumerate(cosine_similarity_filtered[idx]))
-    sim_scores = sorted(sim_cosine, key=lambda x: x[1], reverse=True)
-    sim_ind = [i for i, _ in sim_scores[1:6]]
-    sim_juegos = filtered_df['title'].iloc[sim_ind].values.tolist()
-    
-    return print({'juegos recomendados': list(sim_juegos)})
-
-
-

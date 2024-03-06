@@ -3,9 +3,16 @@ import uvicorn
 import pyarrow
 import pandas as pd
 import numpy as np
+from sklearn.metrics.pairwise        import cosine_similarity
+from sklearn.metrics.pairwise        import linear_kernel
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+
+import importlib
 
 
 
+app=FastAPI(debug=True)
 
 #Lectura Dataframes
 DataSet_Final1 = pd.read_parquet('df1.parquet', engine='pyarrow')
@@ -14,7 +21,15 @@ DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
 DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
 DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
 
-def developer(desarrollador: str):
+#Dataframe con solo 3000 datos no duplicados
+muestra = pd.read_parquet('ml1.parquet', engine='pyarrow')
+
+
+@app.get('/')
+
+
+@app.get('/developer/') 
+async def developer(desarrollador: str):
     Dev = DataSet_Final1[DataSet_Final1['developer'] == desarrollador]
     items = Dev[['anio', 'items_count']].groupby('anio').sum()
     countitems = Dev[['anio', 'items_count']].groupby('anio').count()
@@ -25,24 +40,31 @@ def developer(desarrollador: str):
     r = items.fillna(0)
     r=r.to_dict()
     return {"DataFrame":r}
+ 
 
-def userdata( User_id : str ):
+
+@app.get('/user_data/')
+async def userdata( User_id : str ):
     df_filtrado = DataSet_Final2.loc[DataSet_Final2["user_id"]== User_id]
     total_items= df_filtrado['item_id'].nunique()
     porcentaje_recomendacion= (df_filtrado['recommend'].sum() / total_items) * 100
     cantidad_dinero= df_filtrado['price'].sum()
     return {f'usuario':User_id, 'porcentaje de recomendacion':porcentaje_recomendacion, 'dinero gastado':cantidad_dinero}
 
-def UserForGenre(genero: str) -> dict:
+
+@app.get('/UserForGenre/')
+async def UserForGenre(genero: str) -> dict:
     fg= DataSet_Final3[DataSet_Final3['genres'] == genero]
     fg2 = fg[['user_id', 'playtime_forever']].groupby(fg['user_id']).sum()
     r1 = fg2['playtime_forever'].idxmax()
     cA= fg[fg['user_id'] == r1]
     r2 = cA['anio'].groupby(cA['anio']).sum()
+  
 
     return {f'Usuario con más horas jugadas para Género ':r1, 'Años ':r2.to_dict()}
 
-def best_developer_year(año: int):
+@app.get('/best_developer_year/')
+async def best_developer_year(año: int):
     # Filtrar el dataset por el año especificado
     year_data = DataSet_Final4[DataSet_Final4['anio'] == año]
 
@@ -56,8 +78,11 @@ def best_developer_year(año: int):
     return [{"Puesto 1": top_3_developers.index[0]}, 
             {"Puesto 2": top_3_developers.index[1]}, 
             {"Puesto 3": top_3_developers.index[2]}]
+  
 
-def developer_reviews_analysis(desarrolladora: str) -> dict:
+
+@app.get('/develorper_reviews_analysis/')
+async def developer_reviews_analysis(desarrolladora: str) -> dict:
     Dev = DataSet_Final5[DataSet_Final5['developer'] == desarrolladora]['Sentimiento']
     r1 = (Dev == 2).sum()
     r2 = (Dev == 1).sum()
@@ -67,9 +92,14 @@ def developer_reviews_analysis(desarrolladora: str) -> dict:
 
 
 
-def recomendacion(id_producto: int):
-  
+tfidf = TfidfVectorizer(stop_words='english')
+muestra=muestra.fillna("")
 
+tdfid_matrix = tfidf.fit_transform(muestra['review'])
+cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
+
+@app.get('/recomendacion_id/{id_producto}')
+async def recomendacion(id_producto: int):
     if id_producto not in muestra['steam_id'].values:
         return {'mensaje': 'No existe el id del juego.'}
 
@@ -90,3 +120,4 @@ def recomendacion(id_producto: int):
     sim_juegos = filtered_df['title'].iloc[sim_ind].values.tolist()
 
     return {'juegos recomendados': list(sim_juegos)}
+

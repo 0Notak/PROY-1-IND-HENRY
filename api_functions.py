@@ -1,11 +1,4 @@
-from fastapi import FastAPI
-import uvicorn
-import pyarrow
 import pandas as pd
-import numpy as np
-from sklearn.metrics.pairwise        import cosine_similarity
-from sklearn.metrics.pairwise        import linear_kernel
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 
@@ -15,6 +8,8 @@ DataSet_Final2 = pd.read_parquet('df2.parquet', engine='pyarrow')
 DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
 DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
 DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
+
+muestra = pd.read_parquet('ml1.parquet', engine="pyarrow")
 
 def developer(desarrollador: str):
     Dev = DataSet_Final1[DataSet_Final1['developer'] == desarrollador]
@@ -68,13 +63,8 @@ def developer_reviews_analysis(desarrolladora: str) -> dict:
     return {f'Desarrollador ':desarrolladora, 'Positivo ':r.tolist(), 'Negativo':r3.tolist()}
 
 
-
 def recomendacion(id_producto: int):
-    tfidf = TfidfVectorizer(stop_words='english')
-    muestra=muestra.fillna("")
-
-    tdfid_matrix = tfidf.fit_transform(muestra['review'])
-    cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
+ 
     
     if id_producto not in muestra['steam_id'].values:
         return {'mensaje': 'No existe el id del juego.'}

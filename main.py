@@ -3,9 +3,7 @@ import uvicorn
 import pyarrow
 import pandas as pd
 import numpy as np
-from sklearn.metrics.pairwise        import cosine_similarity
-from sklearn.metrics.pairwise        import linear_kernel
-from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 
 
@@ -70,11 +68,7 @@ def developer_reviews_analysis(desarrolladora: str) -> dict:
 
 
 def recomendacion(id_producto: int):
-    tfidf = TfidfVectorizer(stop_words='english')
-    muestra=muestra.fillna("")
-
-    tdfid_matrix = tfidf.fit_transform(muestra['review'])
-    cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
+  
 
     if id_producto not in muestra['steam_id'].values:
         return {'mensaje': 'No existe el id del juego.'}

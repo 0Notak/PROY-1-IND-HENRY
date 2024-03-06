@@ -11,10 +11,10 @@ app=FastAPI(debug=True)
 
 #Lectura Dataframes
 DataSet_Final1 = pd.read_parquet('df1.parquet', engine='pyarrow')
-DataSet_Final2 = pd.read_parquet('df2.parquet', engine='pyarrow')
-DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
-DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
-DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
+#DataSet_Final2 = pd.read_parquet('df2.parquet', engine='pyarrow')
+#DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
+#DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
+##DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
 
 #Dataframe con solo 3000 datos no duplicados
 muestra = pd.read_parquet('ml1.parquet', engine='pyarrow')
@@ -87,17 +87,17 @@ async def developer_reviews_analysis(desarrolladora: str) -> dict:
 
 
 
-tfidf = TfidfVectorizer(stop_words='english')
-muestra=muestra.fillna("")
-
-tdfid_matrix = tfidf.fit_transform(muestra['review'])
-cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
 
 @app.get('/recomendacion_id/{id_producto}')
 async def recomendacion(id_producto: int):
     if id_producto not in muestra['steam_id'].values:
         return {'mensaje': 'No existe el id del juego.'}
     
+    tfidf = TfidfVectorizer(stop_words='english')
+    muestra=muestra.fillna("")
+
+    tdfid_matrix = tfidf.fit_transform(muestra['review'])
+    cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
     # Obtener géneros del juego con el id_producto
     generos = muestra.columns[2:17]  # Obtener los nombres de las columnas de género
     

@@ -9,12 +9,15 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 app=FastAPI(debug=True)
 
+#Lectura Dataframes
 DataSet_Final1 = pd.read_parquet('df1.parquet', engine='pyarrow')
 DataSet_Final2 = pd.read_parquet('df2.parquet', engine='pyarrow')
 DataSet_Final3 = pd.read_parquet('df3.parquet', engine='pyarrow')
 DataSet_Final4 = pd.read_parquet('df4.parquet', engine='pyarrow')
 DataSet_Final5 = pd.read_parquet('df5.parquet', engine='pyarrow')
 
+#Dataframe con solo 3000 datos no duplicados
+muestra = pd.read_parquet('ml1.parquet', engine='pyarrow')
 
 @app.get('/')
 def message():
@@ -78,4 +81,39 @@ async def developer_reviews_analysis(desarrolladora: str) -> dict:
     r3 = (Dev == 0).sum()
     r = r1 + r2
     return {f'Desarrollador ':desarrolladora, 'Positivo ':r.tolist(), 'Negativo':r3.tolist()}
+
+
+
+
+
+
+tfidf = TfidfVectorizer(stop_words='english')
+muestra=muestra.fillna("")
+
+tdfid_matrix = tfidf.fit_transform(muestra['review'])
+cosine_similarity = linear_kernel( tdfid_matrix, tdfid_matrix)
+
+@app.get('/recomendacion_id/{id_producto}')
+async def recomendacion(id_producto: int):
+    if id_producto not in muestra['steam_id'].values:
+        return {'mensaje': 'No existe el id del juego.'}
+    
+    # Obtener géneros del juego con el id_producto
+    generos = muestra.columns[2:17]  # Obtener los nombres de las columnas de género
+    
+    # Filtrar el dataframe para incluir juegos con géneros coincidentes pero con títulos diferentes
+    filtered_df = muestra[(muestra[generos] == 1).any(axis=1) & (muestra['steam_id'] != id_producto)]
+    
+    # Calcular similitud del coseno
+    tdfid_matrix_filtered = tfidf.transform(filtered_df['review'])
+    cosine_similarity_filtered = linear_kernel(tdfid_matrix_filtered, tdfid_matrix_filtered)
+    
+    idx = muestra[muestra['steam_id'] == id_producto].index[0]
+    sim_cosine = list(enumerate(cosine_similarity_filtered[idx]))
+    sim_scores = sorted(sim_cosine, key=lambda x: x[1], reverse=True)
+    sim_ind = [i for i, _ in sim_scores[1:6]]
+    sim_juegos = filtered_df['title'].iloc[sim_ind].values.tolist()
+    
+    return {'juegos recomendados': list(sim_juegos)}
+
 
